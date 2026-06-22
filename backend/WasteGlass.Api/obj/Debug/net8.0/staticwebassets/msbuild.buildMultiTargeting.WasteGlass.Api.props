@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\WasteGlass.Api.props" />
+</Project>
