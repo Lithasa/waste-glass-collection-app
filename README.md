@@ -14,6 +14,17 @@ This project was built for the Mobile Intern technical task. It includes:
 - Offline first collection saving using local SQLite on the mobile device.
 - Final trip report and sync to server flow.
 
+## Final Hosted Backend
+
+The deployed backend API is hosted on Render:
+
+```text
+https://waste-glass-api.onrender.com
+```
+
+The final APK points to this hosted backend URL, not localhost.
+
+
 ## Tech Stack
 
 ### Mobile App
@@ -274,7 +285,7 @@ static const String baseUrl = 'http://localhost:5057';
 to the hosted backend URL, for example:
 
 ```dart
-static const String baseUrl = 'https://your-hosted-api-url.onrender.com';
+static const String baseUrl = 'https://waste-glass-api.onrender.com';
 ```
 
 Then build the release APK:
@@ -335,6 +346,12 @@ Record this complete flow:
 - [ ] Release APK built successfully
 - [ ] Screen recording completed on real/emulated Android device
 - [ ] Video shows route load, barcode scan, form unlock, confirmation, status update, completed report, shortfall warning, and sync
+
+## Final Barcode Scanner Note
+
+The app uses native Android barcode scanning to scan supplier barcode IDs such as SUP003, SUP004, SUP005, SUP001, and SUP002.
+
+The barcode scan is used as the check-in gate. The collection form unlocks only when the scanned barcode matches the current expected supplier stop. Wrong supplier IDs are blocked.
 
 ## Notes
 
