@@ -66,10 +66,8 @@ class TripProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Offline-first requirement: save locally before any network call.
       await _localDbService.insertCollection(record);
 
-      // Then try to submit to backend immediately.
       await _apiService.submitCollection(
         supplierCode: record.supplierCode,
         clearKg: record.clearKg,
@@ -84,7 +82,6 @@ class TripProvider extends ChangeNotifier {
       trip = await _apiService.getTodayTrip();
       successMessage = 'Collection saved locally and submitted to backend';
     } catch (e) {
-      // If backend fails, the local SQLite record remains unsynced and safe.
       errorMessage =
           'Saved locally. Backend submission failed: ${e.toString()}';
     }
@@ -116,8 +113,6 @@ class TripProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Final sync requirement: push all local collection records for confirmation.
-      // The backend is idempotent using localRecordId, so duplicate records are safe.
       final localRecords = await _localDbService.getAllCollections();
 
       if (localRecords.isEmpty) {
@@ -129,7 +124,9 @@ class TripProvider extends ChangeNotifier {
       }
 
       trip = await _apiService.getTodayTrip();
-      report = await _apiService.getTodayReport();
+      if (trip?.isCompleted == true) {
+        report = await _apiService.getTodayReport();
+      }
     } catch (e) {
       errorMessage = 'Sync failed. Data is still safe locally: ${e.toString()}';
     }

@@ -7,7 +7,11 @@ class TripReportScreen extends StatefulWidget {
   final VoidCallback? onGoHome;
   final VoidCallback? onStartScan;
 
-  const TripReportScreen({super.key, this.onGoHome, this.onStartScan});
+  const TripReportScreen({
+    super.key,
+    this.onGoHome,
+    this.onStartScan,
+  });
 
   @override
   State<TripReportScreen> createState() => _TripReportScreenState();
@@ -31,8 +35,7 @@ class _TripReportScreenState extends State<TripReportScreen> {
     final trip = provider.trip;
     final report = provider.report;
     final suppliers = (report?['suppliers'] as List<dynamic>? ?? []);
-    final completed =
-        trip?.isCompleted == true ||
+    final completed = trip?.isCompleted == true ||
         report?['status']?.toString().toLowerCase() == 'completed';
 
     return SafeArea(
@@ -362,103 +365,103 @@ class _SupplierReportCard extends StatelessWidget {
             ],
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: shortfall
-                      ? const Color(0xFFFF8A1F)
-                      : const Color(0xFFFFD166),
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '${item['sequenceNo'] ?? '-'}',
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: shortfall
+                  ? const Color(0xFFFF8A1F)
+                  : const Color(0xFFFFD166),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '${item['sequenceNo'] ?? '-'}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${item['supplierCode']} • ${item['name']}',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 13,
                     fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                    height: 1.15,
                   ),
                 ),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 3),
+                Text(
+                  item['address']?.toString() ?? '',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.70),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 7,
                   children: [
-                    Text(
-                      '${item['supplierCode']} • ${item['name']}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                        height: 1.15,
-                      ),
+                    _InfoPill(
+                      icon: Icons.scale_rounded,
+                      text: 'Collected ${collected.toStringAsFixed(1)} kg',
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      item['address']?.toString() ?? '',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.70),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    _InfoPill(
+                      icon: Icons.inventory_2_rounded,
+                      text: 'Expected ${expected.toStringAsFixed(1)} kg',
                     ),
-                    const SizedBox(height: 9),
-                    Wrap(
-                      spacing: 7,
-                      runSpacing: 7,
+                    _InfoPill(
+                      icon: Icons.check_circle_rounded,
+                      text: item['status']?.toString() ?? '',
+                    ),
+                  ],
+                ),
+                if (shortfall) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE8CE),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Row(
                       children: [
-                        _InfoPill(
-                          icon: Icons.scale_rounded,
-                          text: 'Collected ${collected.toStringAsFixed(1)} kg',
+                        Icon(
+                          Icons.warning_rounded,
+                          color: Color(0xFFC2410C),
+                          size: 18,
                         ),
-                        _InfoPill(
-                          icon: Icons.inventory_2_rounded,
-                          text: 'Expected ${expected.toStringAsFixed(1)} kg',
-                        ),
-                        _InfoPill(
-                          icon: Icons.check_circle_rounded,
-                          text: item['status']?.toString() ?? '',
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Shortfall: collected quantity is below expected amount.',
+                            style: TextStyle(
+                              color: Color(0xFF9A3412),
+                              fontWeight: FontWeight.w900,
+                              height: 1.25,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                    if (shortfall) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFE8CE),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.warning_rounded,
-                              color: Color(0xFFC2410C),
-                              size: 18,
-                            ),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Shortfall: collected quantity is below expected amount.',
-                                style: TextStyle(
-                                  color: Color(0xFF9A3412),
-                                  fontWeight: FontWeight.w900,
-                                  height: 1.25,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
           ),
         ),
       ),
@@ -597,18 +600,14 @@ class _MessageCard extends StatelessWidget {
             children: [
               Icon(
                 isError ? Icons.error_rounded : Icons.check_circle_rounded,
-                color: isError
-                    ? const Color(0xFFE11D48)
-                    : const Color(0xFF005B49),
+                color: isError ? const Color(0xFFE11D48) : const Color(0xFF005B49),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   message,
                   style: TextStyle(
-                    color: isError
-                        ? const Color(0xFF9F1239)
-                        : const Color(0xFF005B49),
+                    color: isError ? const Color(0xFF9F1239) : const Color(0xFF005B49),
                     fontWeight: FontWeight.w900,
                   ),
                 ),

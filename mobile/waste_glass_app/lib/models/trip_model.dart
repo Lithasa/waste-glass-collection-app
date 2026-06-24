@@ -17,18 +17,13 @@ class TripModel {
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
     final source = _unwrap(json);
-    final rawStops = _findBestStopList(source);
-
-    final remaining = _asInt(
-      _firstValue(source, const [
-        'remainingStops',
-        'remainingStopCount',
-        'pendingStops',
-        'stopsRemaining',
-      ]),
-    );
-
-    final parsedStops = rawStops.map(TripStopModel.fromJson).toList();
+    final stopsJson = _findFirstListDeep(source, const [
+      'stops',
+      'tripStops',
+      'trip_stops',
+      'routeStops',
+      'route',
+    ]);
 
     return TripModel(
       id: _asInt(_firstValue(source, const ['id', 'tripId', 'tripID'])),
@@ -42,15 +37,23 @@ class TripModel {
           'distanceKm',
         ]),
       ),
-      remainingStops: remaining,
-      stops: parsedStops.isNotEmpty
-          ? parsedStops
-          : _fallbackDemoStops(remainingStops: remaining),
+      remainingStops: _asInt(
+        _firstValue(source, const ['remainingStops', 'remainingStopCount']),
+      ),
+      stops: stopsJson.map(TripStopModel.fromJson).toList(),
     );
   }
 
+  /// Use this list for UI rendering and scanner flow.
+  /// If the backend returns the trip summary but the stop array is empty or
+  /// missing, this fallback keeps the demo route visible and usable.
+  List<TripStopModel> get displayStops {
+    if (stops.isNotEmpty) return stops;
+    return demoStopsForRemaining(remainingStops: remainingStops);
+  }
+
   TripStopModel? get nextStop {
-    for (final stop in stops) {
+    for (final stop in displayStops) {
       if (stop.status.toLowerCase() == 'next') return stop;
     }
     return null;
@@ -58,6 +61,90 @@ class TripModel {
 
   bool get isCompleted =>
       remainingStops == 0 || status.toLowerCase() == 'completed';
+
+  static List<TripStopModel> demoStopsForRemaining({required int remainingStops}) {
+    final safeRemaining = remainingStops.clamp(0, 5);
+    final collectedCount = (5 - safeRemaining).clamp(0, 5);
+
+    final suppliers = <SupplierModel>[
+      SupplierModel(
+        supplierCode: 'SUP003',
+        name: 'Maradana Glass Store',
+        address: 'Maradana, Colombo',
+        latitude: 6.9285,
+        longitude: 79.8648,
+        expectedClearKg: 50,
+        expectedColouredKg: 30,
+        expectedTotalKg: 80,
+        barcodeValue: 'SUP003',
+      ),
+      SupplierModel(
+        supplierCode: 'SUP004',
+        name: 'Borella Recycling Supplier',
+        address: 'Borella, Colombo',
+        latitude: 6.9147,
+        longitude: 79.8778,
+        expectedClearKg: 45,
+        expectedColouredKg: 35,
+        expectedTotalKg: 80,
+        barcodeValue: 'SUP004',
+      ),
+      SupplierModel(
+        supplierCode: 'SUP005',
+        name: 'Narahenpita Bottle Collection',
+        address: 'Narahenpita, Colombo',
+        latitude: 6.8914,
+        longitude: 79.8792,
+        expectedClearKg: 40,
+        expectedColouredKg: 40,
+        expectedTotalKg: 80,
+        barcodeValue: 'SUP005',
+      ),
+      SupplierModel(
+        supplierCode: 'SUP001',
+        name: 'Pettah Bottle Supplier',
+        address: 'Pettah, Colombo',
+        latitude: 6.9367,
+        longitude: 79.8498,
+        expectedClearKg: 30,
+        expectedColouredKg: 30,
+        expectedTotalKg: 60,
+        barcodeValue: 'SUP001',
+      ),
+      SupplierModel(
+        supplierCode: 'SUP002',
+        name: 'Fort Hotel Waste Point',
+        address: 'Fort, Colombo',
+        latitude: 6.9339,
+        longitude: 79.8428,
+        expectedClearKg: 50,
+        expectedColouredKg: 50,
+        expectedTotalKg: 100,
+        barcodeValue: 'SUP002',
+      ),
+    ];
+
+    final distances = <double>[0.42, 1.90, 2.79, 6.16, 0.80];
+
+    return List.generate(suppliers.length, (index) {
+      String status;
+      if (index < collectedCount) {
+        status = 'Collected';
+      } else if (index == collectedCount && safeRemaining > 0) {
+        status = 'Next';
+      } else {
+        status = 'Pending';
+      }
+
+      return TripStopModel(
+        id: index + 1,
+        sequenceNo: index + 1,
+        status: status,
+        distanceFromPreviousKm: distances[index],
+        supplier: suppliers[index],
+      );
+    });
+  }
 }
 
 class TripStopModel {
@@ -80,7 +167,6 @@ class TripStopModel {
       'supplier',
       'Supplier',
       'supplierDetails',
-      'supplierDto',
     ]);
 
     return TripStopModel(
@@ -88,9 +174,7 @@ class TripStopModel {
       sequenceNo: _asInt(
         _firstValue(json, const ['sequenceNo', 'sequence', 'orderNo', 'order']),
       ),
-      status: _asString(
-        _firstValue(json, const ['status', 'stopStatus', 'collectionStatus']),
-      ),
+      status: _asString(_firstValue(json, const ['status', 'stopStatus'])),
       distanceFromPreviousKm: _asDouble(
         _firstValue(json, const [
           'distanceFromPreviousKm',
@@ -98,9 +182,7 @@ class TripStopModel {
           'distance',
         ]),
       ),
-      supplier: SupplierModel.fromJson(
-        supplierJson.isNotEmpty ? supplierJson : json,
-      ),
+      supplier: SupplierModel.fromJson(supplierJson),
     );
   }
 }
@@ -135,33 +217,26 @@ class SupplierModel {
     final barcode = _asString(
       _firstValue(json, const ['barcodeValue', 'barcode', 'barcodeId']),
     );
-    final expectedClear = _asDouble(
-      _firstValue(json, const ['expectedClearKg', 'clearKgExpected']),
-    );
-    final expectedColoured = _asDouble(
-      _firstValue(json, const ['expectedColouredKg', 'colouredKgExpected']),
-    );
-    final expectedTotalFromApi = _asDouble(
-      _firstValue(json, const [
-        'expectedTotalKg',
-        'expectedKg',
-        'expectedTotal',
-      ]),
-    );
 
     return SupplierModel(
       supplierCode: supplierCode,
       name: _asString(_firstValue(json, const ['name', 'supplierName'])),
       address: _asString(_firstValue(json, const ['address', 'location'])),
       latitude: _asDouble(_firstValue(json, const ['latitude', 'lat'])),
-      longitude: _asDouble(
-        _firstValue(json, const ['longitude', 'lng', 'lon']),
+      longitude: _asDouble(_firstValue(json, const ['longitude', 'lng', 'lon'])),
+      expectedClearKg: _asDouble(
+        _firstValue(json, const ['expectedClearKg', 'clearKgExpected']),
       ),
-      expectedClearKg: expectedClear,
-      expectedColouredKg: expectedColoured,
-      expectedTotalKg: expectedTotalFromApi > 0
-          ? expectedTotalFromApi
-          : expectedClear + expectedColoured,
+      expectedColouredKg: _asDouble(
+        _firstValue(json, const ['expectedColouredKg', 'colouredKgExpected']),
+      ),
+      expectedTotalKg: _asDouble(
+        _firstValue(json, const [
+          'expectedTotalKg',
+          'expectedKg',
+          'expectedTotal',
+        ]),
+      ),
       barcodeValue: barcode.isNotEmpty ? barcode : supplierCode,
     );
   }
@@ -179,7 +254,6 @@ Object? _firstValue(Map<String, dynamic> json, List<String> keys) {
   for (final key in keys) {
     if (json.containsKey(key) && json[key] != null) return json[key];
   }
-
   for (final entry in json.entries) {
     final value = entry.value;
     if (value is Map) {
@@ -187,7 +261,6 @@ Object? _firstValue(Map<String, dynamic> json, List<String> keys) {
       if (nested != null) return nested;
     }
   }
-
   return null;
 }
 
@@ -199,31 +272,6 @@ Map<String, dynamic> _firstMap(Map<String, dynamic> json, List<String> keys) {
   return <String, dynamic>{};
 }
 
-List<Map<String, dynamic>> _findBestStopList(Map<String, dynamic> json) {
-  final direct = _findFirstListDeep(json, const [
-    'stops',
-    'tripStops',
-    'trip_stops',
-    'routeStops',
-    'route',
-    'orderedStops',
-    'optimizedStops',
-    'stopSequence',
-    'supplierStops',
-    'suppliers',
-  ]);
-
-  if (direct.isNotEmpty) return direct;
-
-  final discovered = <List<Map<String, dynamic>>>[];
-  _collectStopLikeLists(json, discovered);
-
-  if (discovered.isEmpty) return <Map<String, dynamic>>[];
-
-  discovered.sort((a, b) => b.length.compareTo(a.length));
-  return discovered.first;
-}
-
 List<Map<String, dynamic>> _findFirstListDeep(
   Map<String, dynamic> json,
   List<String> keys,
@@ -231,11 +279,10 @@ List<Map<String, dynamic>> _findFirstListDeep(
   for (final key in keys) {
     final value = json[key];
     if (value is List) {
-      final list = value
+      return value
           .whereType<Map>()
           .map((item) => Map<String, dynamic>.from(item))
           .toList();
-      if (_looksLikeStopList(list)) return list;
     }
   }
 
@@ -247,118 +294,6 @@ List<Map<String, dynamic>> _findFirstListDeep(
   }
 
   return <Map<String, dynamic>>[];
-}
-
-void _collectStopLikeLists(
-  Map<String, dynamic> json,
-  List<List<Map<String, dynamic>>> output,
-) {
-  for (final value in json.values) {
-    if (value is List) {
-      final list = value
-          .whereType<Map>()
-          .map((item) => Map<String, dynamic>.from(item))
-          .toList();
-      if (_looksLikeStopList(list)) output.add(list);
-    } else if (value is Map) {
-      _collectStopLikeLists(Map<String, dynamic>.from(value), output);
-    }
-  }
-}
-
-bool _looksLikeStopList(List<Map<String, dynamic>> list) {
-  if (list.isEmpty) return false;
-
-  final first = list.first;
-  return first.containsKey('supplier') ||
-      first.containsKey('supplierCode') ||
-      first.containsKey('barcodeValue') ||
-      first.containsKey('sequenceNo') ||
-      first.containsKey('stopStatus') ||
-      first.containsKey('distanceFromPreviousKm');
-}
-
-List<TripStopModel> _fallbackDemoStops({required int remainingStops}) {
-  final collectedCount = (5 - remainingStops).clamp(0, 5);
-
-  final suppliers = <SupplierModel>[
-    SupplierModel(
-      supplierCode: 'SUP003',
-      name: 'Maradana Glass Store',
-      address: 'Maradana, Colombo',
-      latitude: 0,
-      longitude: 0,
-      expectedClearKg: 50,
-      expectedColouredKg: 30,
-      expectedTotalKg: 80,
-      barcodeValue: 'SUP003',
-    ),
-    SupplierModel(
-      supplierCode: 'SUP004',
-      name: 'Borella Recycling Supplier',
-      address: 'Borella, Colombo',
-      latitude: 0,
-      longitude: 0,
-      expectedClearKg: 45,
-      expectedColouredKg: 35,
-      expectedTotalKg: 80,
-      barcodeValue: 'SUP004',
-    ),
-    SupplierModel(
-      supplierCode: 'SUP005',
-      name: 'Narahenpita Bottle Collection',
-      address: 'Narahenpita, Colombo',
-      latitude: 0,
-      longitude: 0,
-      expectedClearKg: 40,
-      expectedColouredKg: 40,
-      expectedTotalKg: 80,
-      barcodeValue: 'SUP005',
-    ),
-    SupplierModel(
-      supplierCode: 'SUP001',
-      name: 'Pettah Bottle Supplier',
-      address: 'Pettah, Colombo',
-      latitude: 0,
-      longitude: 0,
-      expectedClearKg: 30,
-      expectedColouredKg: 30,
-      expectedTotalKg: 60,
-      barcodeValue: 'SUP001',
-    ),
-    SupplierModel(
-      supplierCode: 'SUP002',
-      name: 'Fort Hotel Waste Point',
-      address: 'Fort, Colombo',
-      latitude: 0,
-      longitude: 0,
-      expectedClearKg: 50,
-      expectedColouredKg: 50,
-      expectedTotalKg: 100,
-      barcodeValue: 'SUP002',
-    ),
-  ];
-
-  final distances = <double>[0.42, 1.90, 2.79, 6.16, 0.80];
-
-  return List.generate(suppliers.length, (index) {
-    String status;
-    if (index < collectedCount) {
-      status = 'Collected';
-    } else if (index == collectedCount && remainingStops > 0) {
-      status = 'Next';
-    } else {
-      status = 'Pending';
-    }
-
-    return TripStopModel(
-      id: index + 1,
-      sequenceNo: index + 1,
-      status: status,
-      distanceFromPreviousKm: distances[index],
-      supplier: suppliers[index],
-    );
-  });
 }
 
 int _asInt(Object? value) {

@@ -43,7 +43,7 @@ class _AppShellState extends State<AppShell> {
             child: Image.asset(
               'assets/images/eco_pattern.png',
               fit: BoxFit.cover,
-              opacity: const AlwaysStoppedAnimation(0.24),
+              opacity: const AlwaysStoppedAnimation(0.14),
             ),
           ),
           IndexedStack(
@@ -77,7 +77,10 @@ class _EcoBottomNav extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTap;
 
-  const _EcoBottomNav({required this.selectedIndex, required this.onTap});
+  const _EcoBottomNav({
+    required this.selectedIndex,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

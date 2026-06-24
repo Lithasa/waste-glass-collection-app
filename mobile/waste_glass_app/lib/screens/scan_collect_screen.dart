@@ -11,14 +11,18 @@ class ScanCollectScreen extends StatefulWidget {
   final VoidCallback? onCompleted;
   final VoidCallback? onGoHome;
 
-  const ScanCollectScreen({super.key, this.onCompleted, this.onGoHome});
+  const ScanCollectScreen({
+    super.key,
+    this.onCompleted,
+    this.onGoHome,
+  });
 
   @override
   State<ScanCollectScreen> createState() => _ScanCollectScreenState();
 }
 
 class _ScanCollectScreenState extends State<ScanCollectScreen> {
-  MobileScannerController _scannerController = MobileScannerController();
+  final MobileScannerController _scannerController = MobileScannerController();
   final TextEditingController _clearKgController = TextEditingController();
   final TextEditingController _colouredKgController = TextEditingController();
   final TextEditingController _conditionController = TextEditingController();
@@ -29,7 +33,6 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
   String? _scannedCode;
   String? _scanMessage;
   String? _activeSupplierCode;
-  int _scannerVersion = 0;
 
   @override
   void dispose() {
@@ -41,38 +44,21 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
     super.dispose();
   }
 
-  void _replaceScannerController() {
-    final oldController = _scannerController;
-    _scannerController = MobileScannerController();
-    _scannerVersion++;
-    oldController.dispose();
-  }
-
   void _resetForStop(TripStopModel? stop) {
     final newCode = stop?.supplier.supplierCode;
     if (_activeSupplierCode == newCode) return;
 
-    setState(() {
-      _activeSupplierCode = newCode;
-      _hasScanned = false;
-      _isVerified = false;
-      _scannedCode = null;
-      _scanMessage = null;
-      _clearKgController.clear();
-      _colouredKgController.clear();
-      _conditionController.clear();
-      _replaceScannerController();
-    });
-  }
+    _activeSupplierCode = newCode;
+    _hasScanned = false;
+    _isVerified = false;
+    _scannedCode = null;
+    _scanMessage = null;
+    _clearKgController.clear();
+    _colouredKgController.clear();
+    _conditionController.clear();
 
-  void _restartScannerForSameStop() {
-    setState(() {
-      _hasScanned = false;
-      _isVerified = false;
-      _scannedCode = null;
-      _scanMessage = null;
-      _replaceScannerController();
-    });
+    // Do not call start() here. Rebuilding the MobileScanner for the new
+    // supplier is more reliable and avoids the black camera surface issue.
   }
 
   void _handleBarcode(String value) async {
@@ -84,8 +70,6 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
       _hasScanned = true;
       _scannedCode = value;
     });
-
-    await _scannerController.stop();
 
     if (!mounted) return;
 
@@ -120,7 +104,7 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
         _scanMessage = null;
       });
 
-      await _scannerController.start();
+      // Camera remains active; no explicit restart is needed.
     }
   }
 
@@ -189,9 +173,8 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
   void _showSnack(String message, {required bool isError}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: isError
-            ? const Color(0xFFE11D48)
-            : const Color(0xFF005B49),
+        backgroundColor:
+            isError ? const Color(0xFFE11D48) : const Color(0xFF005B49),
         content: Text(message),
       ),
     );
@@ -217,13 +200,21 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
             _ScanHeroCard(stop: stop),
             const SizedBox(height: 14),
             _ScannerCard(
-              key: ValueKey('scanner_${_activeSupplierCode}_$_scannerVersion'),
               controller: _scannerController,
               isVerified: _isVerified,
               scannedCode: _scannedCode,
               scanMessage: _scanMessage,
+              scannerKey: ValueKey('scanner-${stop.supplier.supplierCode}'),
               onDetect: _handleBarcode,
-              onScanAgain: _restartScannerForSameStop,
+              onScanAgain: () {
+                setState(() {
+                  _hasScanned = false;
+                  _isVerified = false;
+                  _scannedCode = null;
+                  _scanMessage = null;
+                });
+                // Rebuild the scanner instead of forcing controller.start().
+              },
             ),
             const SizedBox(height: 14),
             _CollectionForm(
@@ -236,9 +227,7 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
             ),
             const SizedBox(height: 14),
             FilledButton.icon(
-              onPressed: provider.isLoading
-                  ? null
-                  : () => _submitCollection(stop),
+              onPressed: provider.isLoading ? null : () => _submitCollection(stop),
               icon: provider.isLoading
                   ? const SizedBox(
                       width: 18,
@@ -419,15 +408,16 @@ class _ScannerCard extends StatelessWidget {
   final bool isVerified;
   final String? scannedCode;
   final String? scanMessage;
+  final Key scannerKey;
   final void Function(String value) onDetect;
   final VoidCallback onScanAgain;
 
   const _ScannerCard({
-    super.key,
     required this.controller,
     required this.isVerified,
     required this.scannedCode,
     required this.scanMessage,
+    required this.scannerKey,
     required this.onDetect,
     required this.onScanAgain,
   });
@@ -487,7 +477,7 @@ class _ScannerCard extends StatelessWidget {
               child: Stack(
                 children: [
                   MobileScanner(
-                    key: ValueKey(controller.hashCode),
+                    key: scannerKey,
                     controller: controller,
                     onDetect: (capture) {
                       final barcode = capture.barcodes.firstOrNull;

@@ -79,7 +79,7 @@ class _TripSequenceScreenState extends State<TripSequenceScreen> {
             else if (trip == null)
               const _EmptyState()
             else
-              ...trip.stops.map((stop) => _StopCard(stop: stop)),
+              ...trip.displayStops.map((stop) => _StopCard(stop: stop)),
           ],
         ),
       ),
@@ -91,7 +91,10 @@ class _TopBar extends StatelessWidget {
   final VoidCallback? onRefresh;
   final VoidCallback? onDebugReset;
 
-  const _TopBar({required this.onRefresh, required this.onDebugReset});
+  const _TopBar({
+    required this.onRefresh,
+    required this.onDebugReset,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -383,9 +386,8 @@ class _StopCard extends StatelessWidget {
           width: MediaQuery.of(context).size.width - 50,
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
-            color: isCollected
-                ? const Color(0xFF005B49)
-                : const Color(0xFF003E34),
+            color:
+                isCollected ? const Color(0xFF005B49) : const Color(0xFF003E34),
             borderRadius: BorderRadius.circular(25),
             boxShadow: [
               BoxShadow(
@@ -396,75 +398,73 @@ class _StopCard extends StatelessWidget {
             ],
           ),
           child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: isNext
-                      ? const Color(0xFFFFD166)
-                      : Colors.white.withValues(alpha: 0.13),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  '${stop.sequenceNo}',
-                  style: TextStyle(
-                    color: isNext ? const Color(0xFF003E34) : Colors.white,
-                    fontSize: 13,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: isNext
+                  ? const Color(0xFFFFD166)
+                  : Colors.white.withValues(alpha: 0.13),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${stop.sequenceNo}',
+              style: TextStyle(
+                color: isNext ? const Color(0xFF003E34) : Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  stop.supplier.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
                     fontWeight: FontWeight.w900,
+                    height: 1.15,
                   ),
                 ),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 3),
+                Text(
+                  stop.supplier.address,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.70),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 7,
                   children: [
-                    Text(
-                      stop.supplier.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        height: 1.15,
-                      ),
+                    _StatusChip(status: stop.status),
+                    _MiniInfo(
+                      icon: Icons.route_rounded,
+                      text: '${stop.distanceFromPreviousKm.toStringAsFixed(2)} km',
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      stop.supplier.address,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.70),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    _MiniInfo(
+                      icon: Icons.scale_rounded,
+                      text: '${stop.supplier.expectedTotalKg.toStringAsFixed(0)} kg',
                     ),
-                    const SizedBox(height: 9),
-                    Wrap(
-                      spacing: 7,
-                      runSpacing: 7,
-                      children: [
-                        _StatusChip(status: stop.status),
-                        _MiniInfo(
-                          icon: Icons.route_rounded,
-                          text:
-                              '${stop.distanceFromPreviousKm.toStringAsFixed(2)} km',
-                        ),
-                        _MiniInfo(
-                          icon: Icons.scale_rounded,
-                          text:
-                              '${stop.supplier.expectedTotalKg.toStringAsFixed(0)} kg',
-                        ),
-                        _MiniInfo(
-                          icon: Icons.qr_code_rounded,
-                          text: stop.supplier.barcodeValue,
-                        ),
-                      ],
+                    _MiniInfo(
+                      icon: Icons.qr_code_rounded,
+                      text: stop.supplier.barcodeValue,
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
+          ),
+        ],
           ),
         ),
       ),
@@ -579,18 +579,14 @@ class _MessageCard extends StatelessWidget {
             children: [
               Icon(
                 isError ? Icons.error_rounded : Icons.check_circle_rounded,
-                color: isError
-                    ? const Color(0xFFE11D48)
-                    : const Color(0xFF005B49),
+                color: isError ? const Color(0xFFE11D48) : const Color(0xFF005B49),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   message,
                   style: TextStyle(
-                    color: isError
-                        ? const Color(0xFF9F1239)
-                        : const Color(0xFF005B49),
+                    color: isError ? const Color(0xFF9F1239) : const Color(0xFF005B49),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
