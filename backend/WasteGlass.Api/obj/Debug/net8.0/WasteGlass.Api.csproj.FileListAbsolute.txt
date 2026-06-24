@@ -109,3 +109,4 @@ C:\Projects\waste-glass-collection-app\backend\WasteGlass.Api\obj\Debug\net8.0\r
 C:\Projects\waste-glass-collection-app\backend\WasteGlass.Api\obj\Debug\net8.0\WasteGlass.Api.pdb
 C:\Projects\waste-glass-collection-app\backend\WasteGlass.Api\obj\Debug\net8.0\WasteGlass.Api.genruntimeconfig.cache
 C:\Projects\waste-glass-collection-app\backend\WasteGlass.Api\obj\Debug\net8.0\ref\WasteGlass.Api.dll
+C:\Projects\waste-glass-collection-app\backend\WasteGlass.Api\obj\Debug\net8.0\WasteGlass.Api.sourcelink.json
