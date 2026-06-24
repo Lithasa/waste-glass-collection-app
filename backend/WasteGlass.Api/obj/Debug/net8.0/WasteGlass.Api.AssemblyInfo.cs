@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WasteGlass.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0614cb04f5c4d0072f3ca0c348ccf51bb939392d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4cb1bc0883ac06347d89eb5ff8c1d04d8cf3c6a8")]
 [assembly: System.Reflection.AssemblyProductAttribute("WasteGlass.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WasteGlass.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

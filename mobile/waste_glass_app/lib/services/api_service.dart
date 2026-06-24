@@ -5,8 +5,8 @@ import '../models/collection_local_model.dart';
 
 class ApiService {
   // During USB testing, use adb reverse tcp:5057 tcp:5057.
-  // Later, replace this with hosted backend URL before building APK.
-  static const String baseUrl = 'http://localhost:5057';
+  
+  static const String baseUrl = 'https://waste-glass-api.onrender.com';
 
   Future<TripModel> getTodayTrip() async {
     final response = await http.get(Uri.parse('$baseUrl/api/trips/today'));
