@@ -62,7 +62,9 @@ class TripModel {
   bool get isCompleted =>
       remainingStops == 0 || status.toLowerCase() == 'completed';
 
-  static List<TripStopModel> demoStopsForRemaining({required int remainingStops}) {
+  static List<TripStopModel> demoStopsForRemaining({
+    required int remainingStops,
+  }) {
     final safeRemaining = remainingStops.clamp(0, 5);
     final collectedCount = (5 - safeRemaining).clamp(0, 5);
 
@@ -223,7 +225,9 @@ class SupplierModel {
       name: _asString(_firstValue(json, const ['name', 'supplierName'])),
       address: _asString(_firstValue(json, const ['address', 'location'])),
       latitude: _asDouble(_firstValue(json, const ['latitude', 'lat'])),
-      longitude: _asDouble(_firstValue(json, const ['longitude', 'lng', 'lon'])),
+      longitude: _asDouble(
+        _firstValue(json, const ['longitude', 'lng', 'lon']),
+      ),
       expectedClearKg: _asDouble(
         _firstValue(json, const ['expectedClearKg', 'clearKgExpected']),
       ),

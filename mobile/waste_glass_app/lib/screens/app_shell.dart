@@ -40,10 +40,13 @@ class _AppShellState extends State<AppShell> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/eco_pattern.png',
-              fit: BoxFit.cover,
-              opacity: const AlwaysStoppedAnimation(0.14),
+            child: Opacity(
+              opacity: 0.10,
+              child: Image.asset(
+                'assets/images/eco_pattern.png',
+                fit: BoxFit.cover,
+                repeat: ImageRepeat.repeat,
+              ),
             ),
           ),
           IndexedStack(
@@ -77,10 +80,7 @@ class _EcoBottomNav extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int> onTap;
 
-  const _EcoBottomNav({
-    required this.selectedIndex,
-    required this.onTap,
-  });
+  const _EcoBottomNav({required this.selectedIndex, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

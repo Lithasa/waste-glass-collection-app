@@ -79,7 +79,7 @@ class _TripSequenceScreenState extends State<TripSequenceScreen> {
             else if (trip == null)
               const _EmptyState()
             else
-              ...trip.displayStops.map((stop) => _StopCard(stop: stop)),
+              ...trip.stops.map((stop) => _StopCard(stop: stop)),
           ],
         ),
       ),
@@ -91,10 +91,7 @@ class _TopBar extends StatelessWidget {
   final VoidCallback? onRefresh;
   final VoidCallback? onDebugReset;
 
-  const _TopBar({
-    required this.onRefresh,
-    required this.onDebugReset,
-  });
+  const _TopBar({required this.onRefresh, required this.onDebugReset});
 
   @override
   Widget build(BuildContext context) {
@@ -180,11 +177,11 @@ class _HeroSummaryCard extends StatelessWidget {
               children: [
                 Positioned(
                   right: 10,
-                  top: 6,
+                  top: 12,
                   child: Icon(
                     Icons.recycling_rounded,
-                    size: 104,
-                    color: Colors.white.withValues(alpha: 0.06),
+                    size: 130,
+                    color: Colors.white.withValues(alpha: 0.065),
                   ),
                 ),
                 Column(
@@ -377,27 +374,22 @@ class _StopCard extends StatelessWidget {
     final isNext = stop.status.toLowerCase() == 'next';
     final isCollected = stop.status.toLowerCase() == 'collected';
 
-    return Padding(
-      padding: const EdgeInsets.only(left: 28, bottom: 12),
-      child: OverflowBox(
-        alignment: Alignment.centerLeft,
-        maxWidth: MediaQuery.of(context).size.width - 50,
-        child: Container(
-          width: MediaQuery.of(context).size.width - 50,
-          padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(
-            color:
-                isCollected ? const Color(0xFF005B49) : const Color(0xFF003E34),
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF003E34).withValues(alpha: 0.10),
-                blurRadius: 12,
-                offset: const Offset(0, 7),
-              ),
-            ],
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(13),
+      decoration: BoxDecoration(
+        color: isCollected ? const Color(0xFF005B49) : const Color(0xFF003E34),
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF003E34).withValues(alpha: 0.10),
+            blurRadius: 12,
+            offset: const Offset(0, 7),
           ),
-          child: Row(
+        ],
+      ),
+      child: Row(
         children: [
           Container(
             width: 38,
@@ -449,11 +441,13 @@ class _StopCard extends StatelessWidget {
                     _StatusChip(status: stop.status),
                     _MiniInfo(
                       icon: Icons.route_rounded,
-                      text: '${stop.distanceFromPreviousKm.toStringAsFixed(2)} km',
+                      text:
+                          '${stop.distanceFromPreviousKm.toStringAsFixed(2)} km',
                     ),
                     _MiniInfo(
                       icon: Icons.scale_rounded,
-                      text: '${stop.supplier.expectedTotalKg.toStringAsFixed(0)} kg',
+                      text:
+                          '${stop.supplier.expectedTotalKg.toStringAsFixed(0)} kg',
                     ),
                     _MiniInfo(
                       icon: Icons.qr_code_rounded,
@@ -465,8 +459,6 @@ class _StopCard extends StatelessWidget {
             ),
           ),
         ],
-          ),
-        ),
       ),
     );
   }
@@ -579,14 +571,18 @@ class _MessageCard extends StatelessWidget {
             children: [
               Icon(
                 isError ? Icons.error_rounded : Icons.check_circle_rounded,
-                color: isError ? const Color(0xFFE11D48) : const Color(0xFF005B49),
+                color: isError
+                    ? const Color(0xFFE11D48)
+                    : const Color(0xFF005B49),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   message,
                   style: TextStyle(
-                    color: isError ? const Color(0xFF9F1239) : const Color(0xFF005B49),
+                    color: isError
+                        ? const Color(0xFF9F1239)
+                        : const Color(0xFF005B49),
                     fontWeight: FontWeight.w900,
                   ),
                 ),
