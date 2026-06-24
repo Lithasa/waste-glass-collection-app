@@ -2624,11 +2624,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Projects\\waste-glass-collection-app\\backend\\WasteGlass.Api\\WasteGlass.Api.csproj",
+      "projectUniqueName": "E:\\Projects\\waste-glass-collection-app\\backend\\WasteGlass.Api\\WasteGlass.Api.csproj",
       "projectName": "WasteGlass.Api",
-      "projectPath": "C:\\Projects\\waste-glass-collection-app\\backend\\WasteGlass.Api\\WasteGlass.Api.csproj",
+      "projectPath": "E:\\Projects\\waste-glass-collection-app\\backend\\WasteGlass.Api\\WasteGlass.Api.csproj",
       "packagesPath": "C:\\Users\\Lithasa Jayamaha\\.nuget\\packages\\",
-      "outputPath": "C:\\Projects\\waste-glass-collection-app\\backend\\WasteGlass.Api\\obj\\",
+      "outputPath": "E:\\Projects\\waste-glass-collection-app\\backend\\WasteGlass.Api\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Lithasa Jayamaha\\AppData\\Roaming\\NuGet\\NuGet.Config"

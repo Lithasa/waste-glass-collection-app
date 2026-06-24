@@ -57,6 +57,7 @@ class _AppShellState extends State<AppShell> {
                 onAnalyticsPressed: () => _selectTab(2),
               ),
               ScanCollectScreen(
+                
                 onCompleted: () => _selectTab(2),
                 onGoHome: () => _selectTab(0),
               ),

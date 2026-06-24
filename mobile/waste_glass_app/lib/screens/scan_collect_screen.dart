@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:barcode_scan2/barcode_scan2.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -18,8 +18,6 @@ class ScanCollectScreen extends StatefulWidget {
 }
 
 class _ScanCollectScreenState extends State<ScanCollectScreen> {
-  late MobileScannerController _scannerController;
-  Key _scannerKey = UniqueKey();
   final TextEditingController _clearKgController = TextEditingController();
   final TextEditingController _colouredKgController = TextEditingController();
   final TextEditingController _conditionController = TextEditingController();
@@ -32,14 +30,7 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
   String? _activeSupplierCode;
 
   @override
-  void initState() {
-    super.initState();
-    _scannerController = MobileScannerController();
-  }
-
-  @override
   void dispose() {
-    _scannerController.dispose();
     _clearKgController.dispose();
     _colouredKgController.dispose();
     _conditionController.dispose();
@@ -51,8 +42,6 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
     final newCode = stop?.supplier.supplierCode;
     if (_activeSupplierCode == newCode) return;
 
-    final oldController = _scannerController;
-
     _activeSupplierCode = newCode;
     _hasScanned = false;
     _isVerified = false;
@@ -62,40 +51,63 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
     _colouredKgController.clear();
     _conditionController.clear();
 
-    _scannerController = MobileScannerController();
-    _scannerKey = UniqueKey();
-
-    oldController.dispose();
-
-    if (mounted) {
-      setState(() {});
-    }
+    if (mounted) setState(() {});
   }
 
   void _restartScanner() {
-    final oldController = _scannerController;
-
     setState(() {
       _hasScanned = false;
       _isVerified = false;
       _scannedCode = null;
       _scanMessage = null;
-      _scannerController = MobileScannerController();
-      _scannerKey = UniqueKey();
-    });
-
-    oldController.dispose();
+      });
   }
 
-  void _handleBarcode(String value) async {
+  Future<void> _openNativeScanner() async {
     if (_hasScanned) return;
 
+    try {
+      final result = await BarcodeScanner.scan(
+        options: const ScanOptions(
+          strings: {
+            'cancel': 'Cancel',
+            'flash_on': 'Flash on',
+            'flash_off': 'Flash off',
+          },
+          autoEnableFlash: false,
+          useCamera: -1,
+        ),
+      );
+
+      if (!mounted) return;
+
+      if (result.type == ResultType.Cancelled) {
+        return;
+      }
+
+      final value = result.rawContent.trim();
+      if (value.isEmpty) {
+        _showSnack('No barcode detected. Try again.', isError: true);
+        return;
+      }
+
+      await _handleBarcode(value);
+    } catch (e) {
+      if (!mounted) return;
+      _showSnack('Scanner could not open. Check camera permission and try again.', isError: true);
+    }
+  }
+
+  Future<void> _handleBarcode(String value) async {
+    if (_hasScanned || value.trim().isEmpty) return;
+
+    final cleanValue = value.trim();
     final tripProvider = context.read<TripProvider>();
-    final isCorrect = tripProvider.isCorrectBarcode(value);
+    final isCorrect = tripProvider.isCorrectBarcode(cleanValue);
 
     setState(() {
       _hasScanned = true;
-      _scannedCode = value;
+      _scannedCode = cleanValue;
     });
 
     if (isCorrect) {
@@ -115,7 +127,7 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
     } else {
       setState(() {
         _isVerified = false;
-        _scanMessage = 'Wrong barcode. Expected current stop, scanned $value.';
+        _scanMessage = 'Wrong barcode. Expected current stop, scanned $cleanValue.';
       });
 
       await Future.delayed(const Duration(seconds: 2));
@@ -125,7 +137,7 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
         _hasScanned = false;
         _scannedCode = null;
         _scanMessage = null;
-      });
+          });
     }
   }
 
@@ -222,12 +234,10 @@ class _ScanCollectScreenState extends State<ScanCollectScreen> {
             _ScanHeroCard(stop: stop),
             const SizedBox(height: 14),
             _ScannerCard(
-              controller: _scannerController,
-              scannerKey: _scannerKey,
               isVerified: _isVerified,
               scannedCode: _scannedCode,
               scanMessage: _scanMessage,
-              onDetect: _handleBarcode,
+              onOpenScanner: _openNativeScanner,
               onScanAgain: _restartScanner,
             ),
             const SizedBox(height: 14),
@@ -420,21 +430,17 @@ class _WaveClipper extends CustomClipper<Path> {
 }
 
 class _ScannerCard extends StatelessWidget {
-  final MobileScannerController controller;
   final bool isVerified;
   final String? scannedCode;
   final String? scanMessage;
-  final void Function(String value) onDetect;
+  final Future<void> Function() onOpenScanner;
   final VoidCallback onScanAgain;
-  final Key scannerKey;
 
   const _ScannerCard({
-    required this.controller,
-    required this.scannerKey,
     required this.isVerified,
     required this.scannedCode,
     required this.scanMessage,
-    required this.onDetect,
+    required this.onOpenScanner,
     required this.onScanAgain,
   });
 
@@ -488,33 +494,51 @@ class _ScannerCard extends StatelessWidget {
             )
           else
             Container(
-              height: 245,
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(22, 28, 22, 28),
               color: Colors.black,
-              child: Stack(
+              child: Column(
                 children: [
-                  MobileScanner(
-                    key: scannerKey,
-                    controller: controller,
-                    onDetect: (capture) {
-                      final barcode = capture.barcodes.firstOrNull;
-                      final value = barcode?.rawValue;
-
-                      if (value == null || value.trim().isEmpty) return;
-
-                      onDetect(value.trim());
-                    },
+                  Container(
+                    width: 74,
+                    height: 74,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.qr_code_scanner_rounded,
+                      color: Colors.white,
+                      size: 40,
+                    ),
                   ),
-                  Center(
-                    child: Container(
-                      width: 205,
-                      height: 112,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: const Color(0xFF64E863),
-                          width: 3,
-                        ),
-                        borderRadius: BorderRadius.circular(22),
-                      ),
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Open barcode scanner',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 21,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'A native scanner will open. Keep the current supplier barcode inside the frame.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.72),
+                      fontWeight: FontWeight.w700,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: onOpenScanner,
+                      icon: const Icon(Icons.qr_code_scanner_rounded),
+                      label: const Text('Start barcode scanner'),
                     ),
                   ),
                 ],

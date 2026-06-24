@@ -5,7 +5,7 @@ import '../models/collection_local_model.dart';
 
 class ApiService {
   // During USB testing, use adb reverse tcp:5057 tcp:5057.
-  
+
   static const String baseUrl = 'https://waste-glass-api.onrender.com';
 
   Future<TripModel> getTodayTrip() async {
